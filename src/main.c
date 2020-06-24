@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <windowsx.h>
 #include <gl/gl.h>
 #include <gl/glu.h>
 #include <math.h>
@@ -27,7 +28,10 @@ int WINAPI WinMain (HINSTANCE hInstance,
     HGLRC hRC;        
     MSG msg;
     BOOL bQuit = FALSE;
-    float theta = 0;
+    float mx = 0;
+    float my = 0;
+    float rx = 0;
+    float ry = 0;
     float *screen = calloc(R*R*6, sizeof(float));
     wc.style = CS_OWNDC;
     wc.lpfnWndProc = WndProc;
@@ -54,25 +58,15 @@ int WINAPI WinMain (HINSTANCE hInstance,
 			_i = (float) i;
 			_j = (float) j;
 			
-			// tan(z)
-			
-			float a[] = {2*PI*(2*_i-R)/R, 2*PI*(2*_j-R)/R};
+			float a[] = {10*(2*_i-R)/R, 10*(2*_j-R)/R};
 			float *b = calloc(2, sizeof(float));
-			float *c = calloc(2, sizeof(float));
-			float *d = calloc(2, sizeof(float));
-			float *e = calloc(2, sizeof(float));
 			
-			nsin(a, b);
-			ncos(a, c);
+			sin2(a, b);
 			
-			reciprocal(c, d, 2);
-			
-			multiply(b, d, e, 2);
-			
-			colour(*(e+1), screen+i*R*6+j*6+0, screen+i*R*6+j*6+1, screen+i*R*6+j*6+2);
-			screen[i*R*6+j*6+3] = (2*_i-R)/R;
-			screen[i*R*6+j*6+4] = (2*_j-R)/R;
-			screen[i*R*6+j*6+5] = *e/(2*PI);
+			colour(*(b+1), 10, screen+i*R*6+j*6);
+			screen[i*R*6+j*6+3] = *a;
+			screen[i*R*6+j*6+4] = *(a+1);
+			screen[i*R*6+j*6+5] = *b;
 			
 		}
 	}
@@ -85,7 +79,7 @@ int WINAPI WinMain (HINSTANCE hInstance,
 	glMatrixMode(GL_PROJECTION);
 	
 	glLoadIdentity();
-	glOrtho(-1, 1, -1, 1, -PI, PI);
+	glOrtho(-10, 10, -10, 10, -10, 10);
 	
 	glMatrixMode(GL_MODELVIEW);
 	
@@ -97,39 +91,47 @@ int WINAPI WinMain (HINSTANCE hInstance,
             {
                 bQuit = TRUE;
             }
+            else if (msg.message == WM_LBUTTONDOWN) {
+            	mx = GET_X_LPARAM(msg.lParam);
+            	my = GET_Y_LPARAM(msg.lParam);
+			}
+			else if (msg.message == WM_LBUTTONUP) {
+				rx += (GET_X_LPARAM(msg.lParam)-mx)/(float)W*360;
+            	ry += (GET_Y_LPARAM(msg.lParam)-my)/(float)H*360;
+			}
+            else if (msg.message == WM_MOUSEMOVE && msg.wParam == MK_LBUTTON) 
+			{
+            	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	        	
+				glPushMatrix();
+				
+				glLoadIdentity();
+				
+				glRotatef(ry+(GET_Y_LPARAM(msg.lParam)-my)/(float)H*360, 1, 0, 0);
+				glRotatef(rx+(GET_X_LPARAM(msg.lParam)-mx)/(float)W*360, 0, 0, 1);
+				
+				for (i = 0; i < R-1; i++) {
+					glBegin(GL_QUAD_STRIP);
+					for (j = 0; j < R; j++) {
+						for (k = 0; k < 2; k++) {
+							glColor3f(screen[(i+k)*R*6+j*6+0],screen[(i+k)*R*6+j*6+1],screen[(i+k)*R*6+j*6+2]);
+							glVertex3f(screen[(i+k)*R*6+j*6+3],screen[(i+k)*R*6+j*6+4],screen[(i+k)*R*6+j*6+5]);
+						}
+					}
+					glEnd();
+				}
+				
+				glPopMatrix();
+	            SwapBuffers(hDC);
+	            
+	            Sleep(10);
+			}
             else
             {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
-        }
-        else
-        {
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        	
-			glPushMatrix();
-			glLoadIdentity();
-			glRotatef(90+20*sin(theta/50), 1, 0, 0);
-			glRotatef(theta, 0, 0, 1);
-			
-			for (i = 0; i < R-1; i++) {
-				glBegin(GL_QUAD_STRIP);
-				for (j = 0; j < R; j++) {
-					for (k = 0; k < 2; k++) {
-						glColor3f(screen[(i+k)*R*6+j*6+0],screen[(i+k)*R*6+j*6+1],screen[(i+k)*R*6+j*6+2]);
-						glVertex3f(screen[(i+k)*R*6+j*6+3],screen[(i+k)*R*6+j*6+4],screen[(i+k)*R*6+j*6+5]);
-					}
-				}
-				glEnd();
-			}
-			
-			theta += 1;
-			glPopMatrix();
-            SwapBuffers(hDC);
-            
-            Sleep(10);
-			
         }
     }
     free(screen);
