@@ -8,6 +8,7 @@ void subtract(float *a, float *b, float *c, int n);
 void conjugate(float *a, float *b, int n);
 void multiply(float *a, float *b, float *c, int n);
 void reciprocal(float *b, float *c, int n);
+void exponentiate(float *a, float *b, int n);
 
 void add(float *a, float *b, float *c, int n) {
 	int i;
@@ -52,6 +53,22 @@ void reciprocal(float *a, float *b, int n) {
 	float k = 0;
 	for (i = 0; i < n; i++) k += a[i] * a[i];
 	for (i = 0; i < n; i++) b[i] /= k;
+}
+
+void exponentiate(float *a, float *b, int n) {
+	*b = exp(*a);
+	int i, j;
+	for (j = 1; j < n; j++) *(b+j) = 0;
+	float *c = calloc(n, sizeof(float));
+	for (i = 1; i < n; i++) {
+		*c = cos(*(a+i));
+		for (j = 1; j < n; j++) {
+			*(c+j) = (j == i) ? sin(*(a+i)) : 0;
+		}
+		multiply(b, c, b, n);
+	}
+	free(c);
+	
 }
 
 #endif

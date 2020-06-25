@@ -15,6 +15,15 @@ void DisableOpenGL (HWND hWnd, HDC hDC, HGLRC hRC);
 const int W = 500;
 const int H = 500;
 const int R = 200;
+const float MAXX = 10;
+const float MAXY = 5;
+const float MAXZ = 10;
+const float MAXW = 10;
+const float MINX = -10;
+const float MINY = -5;
+const float MINZ = -10;
+const float MINW = -10;
+const float SPEED = 180;
 const float PI = 3.141592653;
 
 int WINAPI WinMain (HINSTANCE hInstance,
@@ -32,7 +41,8 @@ int WINAPI WinMain (HINSTANCE hInstance,
     float my = 0;
     float rx = 0;
     float ry = 0;
-    float *screen = calloc(R*R*6, sizeof(float));
+    float *function = calloc(R*R*6, sizeof(float));
+    float *grid = calloc((MAXX-MINX)*(MAXY-MINY), sizeof(float));
     wc.style = CS_OWNDC;
     wc.lpfnWndProc = WndProc;
     wc.cbClsExtra = 0;
@@ -52,22 +62,26 @@ int WINAPI WinMain (HINSTANCE hInstance,
       NULL, NULL, hInstance, NULL);
 	
 	int i, j, k;
-	float _i, _j;
+	float _i, _j, b1, b2, b3;
+	
+	b1 = (MAXX-MINX)/2;
+	b2 = (MAXY-MINY)/2;
+	b3 = (MAXZ-MINZ)/2;
+	
 	for (i = 0; i < R; i++) {
 		for (j = 0; j < R; j++) {
 			_i = (float) i;
 			_j = (float) j;
 			
-			float a[] = {10*(2*_i-R)/R, 10*(2*_j-R)/R};
+			float a[] = {b1*(2*_i-R)/R+MINX+b1, b2*(2*_j-R)/R+MINY+b2};
 			float *b = calloc(2, sizeof(float));
 			
-			sin2(a, b);
+			exponentiate(a, b, 2);
 			
-			colour(*(b+1), 10, screen+i*R*6+j*6);
-			screen[i*R*6+j*6+3] = *a;
-			screen[i*R*6+j*6+4] = *(a+1);
-			screen[i*R*6+j*6+5] = *b;
-			
+			function[i*R*6+j*6+3] = (*a-MINX-b1)/b1*10;
+			function[i*R*6+j*6+4] = (*(a+1)-MINY-b2)/b2*10;
+			function[i*R*6+j*6+5] = (*b-MINZ-b3)/b3*10;
+			colour(*(b+1), MINW, MAXW, function+i*R*6+j*6);
 		}
 	}
 	
@@ -95,9 +109,9 @@ int WINAPI WinMain (HINSTANCE hInstance,
             	mx = GET_X_LPARAM(msg.lParam);
             	my = GET_Y_LPARAM(msg.lParam);
 			}
-			else if (msg.message == WM_LBUTTONUP) {
-				rx += (GET_X_LPARAM(msg.lParam)-mx)/(float)W*360;
-            	ry += (GET_Y_LPARAM(msg.lParam)-my)/(float)H*360;
+			else if (msg.message == WM_LBUTTONUP || msg.message == WM_NCMOUSELEAVE) {
+				rx += (GET_X_LPARAM(msg.lParam)-mx)/(float)W*SPEED;
+            	ry += (GET_Y_LPARAM(msg.lParam)-my)/(float)H*SPEED;
 			}
             else if (msg.message == WM_MOUSEMOVE && msg.wParam == MK_LBUTTON) 
 			{
@@ -108,17 +122,58 @@ int WINAPI WinMain (HINSTANCE hInstance,
 				
 				glLoadIdentity();
 				
-				glRotatef(ry+(GET_Y_LPARAM(msg.lParam)-my)/(float)H*360, 1, 0, 0);
-				glRotatef(rx+(GET_X_LPARAM(msg.lParam)-mx)/(float)W*360, 0, 0, 1);
+				glRotatef(ry+(GET_Y_LPARAM(msg.lParam)-my)/(float)H*SPEED, 1, 0, 0);
+				glRotatef(rx+(GET_X_LPARAM(msg.lParam)-mx)/(float)W*SPEED, 0, 0, 1);
 				
 				for (i = 0; i < R-1; i++) {
 					glBegin(GL_QUAD_STRIP);
 					for (j = 0; j < R; j++) {
 						for (k = 0; k < 2; k++) {
-							glColor3f(screen[(i+k)*R*6+j*6+0],screen[(i+k)*R*6+j*6+1],screen[(i+k)*R*6+j*6+2]);
-							glVertex3f(screen[(i+k)*R*6+j*6+3],screen[(i+k)*R*6+j*6+4],screen[(i+k)*R*6+j*6+5]);
+							glColor3f(function[(i+k)*R*6+j*6+0],function[(i+k)*R*6+j*6+1],function[(i+k)*R*6+j*6+2]);
+							glVertex3f(function[(i+k)*R*6+j*6+3],function[(i+k)*R*6+j*6+4],function[(i+k)*R*6+j*6+5]);
 						}
 					}
+					glEnd();
+				}
+				
+				glColor3f(1, 1, 1);
+				
+				for (i = MINX; i <= MAXX; i++) {
+					glBegin(GL_LINES);
+					glVertex3f((float)i/b1*10-MINX-b1, -10, 0);
+					glVertex3f((float)i/b1*10-MINX-b1, 10, 0);
+					glEnd();
+				}
+				for (j = MINY; j <= MAXY; j++) {
+					glBegin(GL_LINES);
+					glVertex3f(-10, (float)j/b2*10-MINY-b2, 0);
+					glVertex3f(10, (float)j/b2*10-MINY-b2, 0);
+					glEnd();
+				}
+				
+				for (i = MINZ; i <= MAXZ; i++) {
+					glBegin(GL_LINES);
+					glVertex3f(-10, 0, (float)i/b3*10-MINZ-b3);
+					glVertex3f(10, 0, (float)i/b3*10-MINZ-b3);
+					glEnd();
+				}
+				for (j = MINX; j <= MAXX; j++) {
+					glBegin(GL_LINES);
+					glVertex3f((float)j/b1*10-MINX-b1, 0, -10);
+					glVertex3f((float)j/b1*10-MINX-b1, 0, 10);
+					glEnd();
+				}
+				
+				for (i = MINZ; i <= MAXZ; i++) {
+					glBegin(GL_LINES);
+					glVertex3f(0, -10, (float)i/b3*10-MINZ-b3);
+					glVertex3f(0, 10, (float)i/b3*10-MINZ-b3);
+					glEnd();
+				}
+				for (j = MINY; j <= MAXY; j++) {
+					glBegin(GL_LINES);
+					glVertex3f(0, (float)j/b2*10-MINY-b2, -10);
+					glVertex3f(0, (float)j/b2*10-MINY-b2, 10);
 					glEnd();
 				}
 				
@@ -134,7 +189,8 @@ int WINAPI WinMain (HINSTANCE hInstance,
             }
         }
     }
-    free(screen);
+    free(function);
+    free(grid);
     
     DisableOpenGL(hWnd, hDC, hRC);
 	

@@ -3,12 +3,13 @@
 
 #include <math.h>
 
-void colour(float a, float *r, float *g, float *b);
+void colour(float a, float min, float max, float *c);
 
-void colour(float a, float *r, float *g, float *b) {
-	*r = fabs((a+1)/2)-1;
-	*g = -fabs((a-1)/2)+2;
-	*b = (1-a)/2;
+void colour(float a, float min, float max, float *c) {
+	float b = 10*(a-(max+min)/2)/(max-min);
+	*(c) = fabs((b+1)/2)-1;
+	*(c+1) = -fabs((b-1)/2)+2;
+	*(c+2) = (1-b)/2;
 }
 
 #endif
