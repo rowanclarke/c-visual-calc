@@ -15,26 +15,24 @@ void DisableOpenGL (HWND hWnd, HDC hDC, HGLRC hRC);
 const int W = 500;
 const int H = 500;
 const int R = 200;
+const float PI = 3.141592653;
+
 const float MAXX = 10;
-const float MAXY = 5;
+const float MAXY = 10;
 const float MAXZ = 10;
 const float MAXW = 10;
 const float MINX = -10;
-const float MINY = -5;
+const float MINY = -10;
 const float MINZ = -10;
 const float MINW = -10;
 const float SPEED = 180;
-const float PI = 3.141592653;
 
-int WINAPI WinMain (HINSTANCE hInstance,
-                    HINSTANCE hPrevInstance,
-                    LPSTR lpCmdLine,
-                    int iCmdShow)
-{
+
+int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int iCmdShow) {
     WNDCLASS wc;
     HWND hWnd;
     HDC hDC;
-    HGLRC hRC;        
+    HGLRC hRC;
     MSG msg;
     BOOL bQuit = FALSE;
     float mx = 0;
@@ -62,25 +60,29 @@ int WINAPI WinMain (HINSTANCE hInstance,
       NULL, NULL, hInstance, NULL);
 	
 	int i, j, k;
-	float _i, _j, b1, b2, b3;
+	float _i, _j, b1, b2, b3, c1, c2, c3;
 	
 	b1 = (MAXX-MINX)/2;
 	b2 = (MAXY-MINY)/2;
 	b3 = (MAXZ-MINZ)/2;
+	
+	c1 = (MAXX+MINX)/2;
+	c2 = (MAXY+MINY)/2;
+	c3 = (MAXZ+MINZ)/2;
 	
 	for (i = 0; i < R; i++) {
 		for (j = 0; j < R; j++) {
 			_i = (float) i;
 			_j = (float) j;
 			
-			float a[] = {b1*(2*_i-R)/R+MINX+b1, b2*(2*_j-R)/R+MINY+b2};
+			float a[] = {b1*(2*_i-R)/R+c1, b2*(2*_j-R)/R+c2};
 			float *b = calloc(2, sizeof(float));
 			
 			exponentiate(a, b, 2);
 			
-			function[i*R*6+j*6+3] = (*a-MINX-b1)/b1*10;
-			function[i*R*6+j*6+4] = (*(a+1)-MINY-b2)/b2*10;
-			function[i*R*6+j*6+5] = (*b-MINZ-b3)/b3*10;
+			function[i*R*6+j*6+3] = (*a-c1)/b1*10;
+			function[i*R*6+j*6+4] = (*(a+1)-c2)/b2*10;
+			function[i*R*6+j*6+5] = (*b-c3)/b3*10;
 			colour(*(b+1), MINW, MAXW, function+i*R*6+j*6);
 		}
 	}
@@ -97,24 +99,20 @@ int WINAPI WinMain (HINSTANCE hInstance,
 	
 	glMatrixMode(GL_MODELVIEW);
 	
-    while (!bQuit)
-    {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-            if (msg.message == WM_QUIT)
-            {
+    while (!bQuit) {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
                 bQuit = TRUE;
             }
             else if (msg.message == WM_LBUTTONDOWN) {
             	mx = GET_X_LPARAM(msg.lParam);
             	my = GET_Y_LPARAM(msg.lParam);
 			}
-			else if (msg.message == WM_LBUTTONUP || msg.message == WM_NCMOUSELEAVE) {
+			else if (msg.message == WM_LBUTTONUP) {
 				rx += (GET_X_LPARAM(msg.lParam)-mx)/(float)W*SPEED;
             	ry += (GET_Y_LPARAM(msg.lParam)-my)/(float)H*SPEED;
 			}
-            else if (msg.message == WM_MOUSEMOVE && msg.wParam == MK_LBUTTON) 
-			{
+            else if (msg.message == WM_MOUSEMOVE && msg.wParam == MK_LBUTTON) {
             	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	        	
@@ -140,40 +138,40 @@ int WINAPI WinMain (HINSTANCE hInstance,
 				
 				for (i = MINX; i <= MAXX; i++) {
 					glBegin(GL_LINES);
-					glVertex3f((float)i/b1*10-MINX-b1, -10, 0);
-					glVertex3f((float)i/b1*10-MINX-b1, 10, 0);
+					glVertex3f(((float)i-c1)*10/b1, -10, 0);
+					glVertex3f(((float)i-c1)*10/b1, 10, 0);
 					glEnd();
 				}
-				for (j = MINY; j <= MAXY; j++) {
+				for (i = MINY; i <= MAXY; i++) {
 					glBegin(GL_LINES);
-					glVertex3f(-10, (float)j/b2*10-MINY-b2, 0);
-					glVertex3f(10, (float)j/b2*10-MINY-b2, 0);
-					glEnd();
-				}
-				
-				for (i = MINZ; i <= MAXZ; i++) {
-					glBegin(GL_LINES);
-					glVertex3f(-10, 0, (float)i/b3*10-MINZ-b3);
-					glVertex3f(10, 0, (float)i/b3*10-MINZ-b3);
-					glEnd();
-				}
-				for (j = MINX; j <= MAXX; j++) {
-					glBegin(GL_LINES);
-					glVertex3f((float)j/b1*10-MINX-b1, 0, -10);
-					glVertex3f((float)j/b1*10-MINX-b1, 0, 10);
+					glVertex3f(-10, ((float)i-c2)*10/b2, 0);
+					glVertex3f(10, ((float)i-c2)*10/b2, 0);
 					glEnd();
 				}
 				
 				for (i = MINZ; i <= MAXZ; i++) {
 					glBegin(GL_LINES);
-					glVertex3f(0, -10, (float)i/b3*10-MINZ-b3);
-					glVertex3f(0, 10, (float)i/b3*10-MINZ-b3);
+					glVertex3f(-10, 0, ((float)i-c3)*10/b3);
+					glVertex3f(10, 0, ((float)i-c3)*10/b3);
 					glEnd();
 				}
-				for (j = MINY; j <= MAXY; j++) {
+				for (i = MINX; i <= MAXX; i++) {
 					glBegin(GL_LINES);
-					glVertex3f(0, (float)j/b2*10-MINY-b2, -10);
-					glVertex3f(0, (float)j/b2*10-MINY-b2, 10);
+					glVertex3f(((float)i-c1)*10/b1, 0, -10);
+					glVertex3f(((float)i-c1)*10/b1, 0, 10);
+					glEnd();
+				}
+				
+				for (i = MINZ; i <= MAXZ; i++) {
+					glBegin(GL_LINES);
+					glVertex3f(0, -10, ((float)i-c3)*10/b3);
+					glVertex3f(0, 10, ((float)i-c3)*10/b3);
+					glEnd();
+				}
+				for (i = MINY; i <= MAXY; i++) {
+					glBegin(GL_LINES);
+					glVertex3f(0, ((float)i-c2)*10/b2, -10);
+					glVertex3f(0, ((float)i-c2)*10/b2, 10);
 					glEnd();
 				}
 				
@@ -182,8 +180,7 @@ int WINAPI WinMain (HINSTANCE hInstance,
 	            
 	            Sleep(10);
 			}
-            else
-            {
+            else {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
@@ -199,8 +196,7 @@ int WINAPI WinMain (HINSTANCE hInstance,
     return msg.wParam;
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message)
     {
     case WM_CREATE:
@@ -214,21 +210,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_KEYDOWN:
-        switch (wParam)
-        {
+        switch (wParam) {
         case VK_ESCAPE:
             PostQuitMessage(0);
             return 0;
         }
         return 0;
 
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
+	    default:
+	        return DefWindowProc(hWnd, message, wParam, lParam);
+    	}
 }
 
-void EnableOpenGL(HWND hWnd, HDC *hDC, HGLRC *hRC)
-{
+void EnableOpenGL(HWND hWnd, HDC *hDC, HGLRC *hRC) {
     PIXELFORMATDESCRIPTOR pfd;
     int iFormat;
     
@@ -249,8 +243,7 @@ void EnableOpenGL(HWND hWnd, HDC *hDC, HGLRC *hRC)
     wglMakeCurrent(*hDC, *hRC);
 }
 
-void DisableOpenGL(HWND hWnd, HDC hDC, HGLRC hRC)
-{
+void DisableOpenGL(HWND hWnd, HDC hDC, HGLRC hRC) {
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(hRC);
     ReleaseDC(hWnd, hDC);
